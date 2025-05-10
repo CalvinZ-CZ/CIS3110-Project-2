@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/sb-admin-2@4.0.2/dist/css/sb-admin-2.min.css" rel="stylesheet">
+  <style>
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    .container-fluid {
+      padding: 20px;
+    }
+
+    .card {
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas {
+      width: 100%;
+      max-height: 350px;
+    }
+
+    @media (max-width: 768px) {
+      .card {
+        height: 350px;
+      }
+
+      canvas {
+        max-height: 300px;
+      }
+    }
+  </style>
+</head>
+
+<body id="page-top">
+
+  <div id="wrapper">
+    <!-- Sidebar -->
+    <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+      <a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
+        <div class="sidebar-brand-text mx-3"></div>
+      </a>
+      <hr class="sidebar-divider my-0">
+      <li class="nav-item active">
+        <a class="nav-link" href="#">
+          <i class="fas fa-fw fa-tachometer-alt"></i>
+          <span></span>
+        </a>
+      </li>
+      <hr class="sidebar-divider">
+    </ul>
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+      <div id="content">
+        <!-- Topbar -->
+        <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+          <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+            <i class="fa fa-bars"></i>
+          </button>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="container-fluid">
+          <h1 class="h3 mb-4 text-gray-800">Valorant Peripherals Analytics Dashboard</h1>
+
+          <div class="row">
+            <!-- Mouse Usage Chart -->
+            <div class="col-xl-6 col-lg-6">
+              <div class="card shadow">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Mouse Usage</h6>
+                </div>
+                <div class="card-body">
+                  <canvas id="mouseChart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Keyboard Preferences Pie Chart -->
+            <div class="col-xl-6 col-lg-6">
+              <div class="card shadow">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Keyboard Preferences</h6>
+                </div>
+                <div class="card-body">
+                  <canvas id="keyboardChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <!-- Headset Stats Bar Chart -->
+            <div class="col-xl-4 col-lg-4">
+              <div class="card shadow">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Headset Stats</h6>
+                </div>
+                <div class="card-body">
+                  <canvas id="headsetChart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Monitor Configuration Scatter Plot -->
+            <div class="col-xl-4 col-lg-4">
+              <div class="card shadow">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Monitor Configuration</h6>
+                </div>
+                <div class="card-body">
+                  <canvas id="monitorChart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mousepad Longevity Line Chart -->
+            <div class="col-xl-4 col-lg-4">
+              <div class="card shadow">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Mousepad Longevity</h6>
+                </div>
+                <div class="card-body">
+                  <canvas id="mousepadLongevityChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/regression"></script>
+  <script src="https://cdn.jsdelivr.net/npm/heatmap.js@2.0.0-rc.3/dist/heatmap.min.js"></script>
+
+  <script>
+    const csvFiles = {
+      mouse: 'data/mouse_usage.csv',
+      keyboard: 'data/keyboard_preference.csv',
+      headset: 'data/headset_stats.csv',
+      monitor: 'data/monitor_config.csv',
+      mousepadLongevity: 'data/mousepad_longevity.csv',
+    };
+
+    function createChart(id, type, dataCallback) {
+      const ctx = document.getElementById(id).getContext('2d');
+      ctx.canvas.height = 350;  // Improved height for better chart size
+      ctx.canvas.width = 500;   // Improved width for better chart size
+      Papa.parse(csvFiles[id.replace('Chart', '')], {
+        download: true,
+        header: true,
+        complete: function (results) {
+          const data = dataCallback(results.data);
+          new Chart(ctx, {
+            type: type,
+            data: data,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false
+            }
+          });
+        }
+      });
+    }
+
+    // Random color generator
+    function randomColor() {
+      const letters = '0123456789ABCDEF';
+      let color = '#';
+      for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+      }
+      return color;
+    }
+
+    // Mouse Chart (Doughnut)
+    createChart('mouseChart', 'doughnut', function (data) {
+      const counts = {};
+      data.forEach(row => {
+        const model = row.mouse_model;
+        if (!counts[model]) counts[model] = 0;
+        counts[model]++;
+      });
+      return {
+        labels: Object.keys(counts),
+        datasets: [{
+          label: 'Mouse Usage',
+          data: Object.values(counts),
+          backgroundColor: Object.keys(counts).map(() => randomColor())
+        }]
+      };
+    });
+
+    // Keyboard Chart (Pie)
+    createChart('keyboardChart', 'pie', function (data) {
+      const counts = {};
+      data.forEach(row => {
+        const type = row.switch_type;
+        if (!counts[type]) counts[type] = 0;
+        counts[type]++;
+      });
+      return {
+        labels: Object.keys(counts),
+        datasets: [{
+          data: Object.values(counts),
+          backgroundColor: Object.keys(counts).map(() => randomColor())
+        }]
+      };
+    });
+
+    // Headset Chart (Bar)
+    createChart('headsetChart', 'bar', function (data) {
+      const counts = {};
+      data.forEach(row => {
+        const model = row.headset_model;
+        if (!counts[model]) counts[model] = 0;
+        counts[model]++;
+      });
+      return {
+        labels: Object.keys(counts),
+        datasets: [{
+          label: 'Headset Usage',
+          data: Object.values(counts),
+          backgroundColor: Object.keys(counts).map(() => randomColor())
+        }]
+      };
+    });
+
+    // Monitor Chart (Bar)
+    createChart('monitorChart', 'bar', function (data) {
+      const points = data.map(row => ({
+        refreshRate: parseInt(row.refresh_rate_hz),
+        screenSize: parseFloat(row.screen_size_in)
+      }));
+
+      const refreshRates = [...new Set(points.map(p => p.refreshRate))];
+      const screenSizes = [...new Set(points.map(p => p.screenSize))];
+
+      const screenSizeCounts = refreshRates.reduce((acc, refreshRate) => {
+        acc[refreshRate] = screenSizes.map(screenSize =>
+          points.filter(p => p.refreshRate === refreshRate && p.screenSize === screenSize).length
+        );
+        return acc;
+      }, {});
+
+      const datasets = screenSizes.map((screenSize, index) => ({
+        label: `${screenSize}"`,
+        data: refreshRates.map(refreshRate => screenSizeCounts[refreshRate][index]),
+        backgroundColor: randomColor(),
+        stack: 'stack1'
+      }));
+
+      return {
+        labels: refreshRates,
+        datasets: datasets,
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Refresh Rate (Hz)'
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Number of Monitors'
+              },
+              beginAtZero: true
+            }
+          },
+          plugins: {
+            legend: {
+              position: 'top'
+            }
+          }
+        }
+      };
+    });
+
+    // Mousepad Longevity Line Chart
+    createChart('mousepadLongevityChart', 'line', function(data) {
+  const brandTotals = {};
+  const brandCounts = {};
+
+  data.forEach(row => {
+    const brand = row.mousepad_brand;
+    const longevity = parseInt(row.mousepad_longevity_months);
+    if (!brandTotals[brand]) {
+      brandTotals[brand] = 0;
+      brandCounts[brand] = 0;
+    }
+    brandTotals[brand] += longevity;
+    brandCounts[brand] += 1;
+  });
+
+  const brands = Object.keys(brandTotals).sort(); // optional: sort alphabetically
+  const averages = brands.map(brand => brandTotals[brand] / brandCounts[brand]);
+
+  return {
+    labels: brands,
+    datasets: [{
+      label: 'Average Longevity (Months)',
+      data: averages,
+      borderColor: randomColor(),
+      fill: false,
+      tension: 0.3,
+      pointRadius: 5
+    }]
+  };
+});
+  </script>
+</body>
+
+</html>
