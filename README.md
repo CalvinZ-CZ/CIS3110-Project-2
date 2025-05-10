@@ -30,3 +30,4 @@ This is a web-based dashboard built with HTML, Bootstrap, Chart.js, and Python-g
    pip install pandas numpy faker
 4. Run: python data/generate_csvs.py
 
+[![PROJECT TWO VIDEO](http://img.youtube.com/vi/3uy-E6VRz-Y/0.jpg)](https://www.youtube.com/watch?v=3uy-E6VRz-Y)
